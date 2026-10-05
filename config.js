@@ -12,10 +12,10 @@
 // ============================================================
 
 export const firebaseConfig = {
-  apiKey: "COLA_AQUI_A_TUA_API_KEY",
-  authDomain: "COLA_AQUI_O_TEU_PROJETO.firebaseapp.com",
-  projectId: "COLA_AQUI_O_TEU_PROJECT_ID",
-  storageBucket: "COLA_AQUI_O_TEU_PROJETO.appspot.com",
-  messagingSenderId: "COLA_AQUI_O_SENDER_ID",
-  appId: "COLA_AQUI_O_APP_ID"
+  apiKey: "AIzaSyBZmtqtvmQEB1hPyU5dm_cjRGfn8fjvl5U",
+  authDomain: "roleta-comes.firebaseapp.com",
+  projectId: "roleta-comes",
+  storageBucket: "roleta-comes.firebasestorage.app",
+  messagingSenderId: "158965035771",
+  appId: "1:158965035771:web:6beb8d98a6a804b0d1b65e"
 };
