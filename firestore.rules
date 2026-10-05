@@ -1,0 +1,24 @@
+rules_version = '2';
+
+// Regras de segurança do Firestore para a Roleta do Jantar.
+//
+// - Qualquer pessoa pode LER as receitas (para a app funcionar sem
+//   precisares de fazer login).
+// - Só pede para ESCREVER (adicionar/editar/remover) a alguém que
+//   já passou pela autenticação anónima da app (feita automaticamente
+//   quando a página abre). Isto não é uma password — é apenas uma
+//   barreira simples contra bots que andam à procura de bases de
+//   dados abertas na internet.
+//
+// Se um dia quiseres proteger a escrita com uma password real,
+// terias de mudar para autenticação com email/password e ajustar
+// esta regra para verificar o utilizador específico.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /receitas/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}

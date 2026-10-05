@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Roleta do Jantar">
+<meta name="theme-color" content="#2b2620">
+<title>Roleta do Jantar</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root{
+    --paper:#f2ead9;
+    --paper-2:#e9dfc7;
+    --ink:#2b2620;
+    --ink-dim:#6b6255;
+    --rule:#c9bb9c;
+    --stamp:#a63a2e;
+    --stamp-ink:#fbe9d9;
+    --ok:#4c6b3f;
+    --ok-ink:#f2f6ec;
+    --card-shadow: 2px 3px 0 rgba(43,38,32,0.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#211d18;
+      --paper-2:#2a251e;
+      --ink:#ece2cf;
+      --ink-dim:#a89d89;
+      --rule:#4a4033;
+      --stamp:#e2624f;
+      --stamp-ink:#241109;
+      --ok:#8fb377;
+      --ok-ink:#122008;
+      --card-shadow: 2px 3px 0 rgba(0,0,0,0.45);
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Mono", "Courier New", monospace;
+    padding-inline:16px;
+    padding-block:24px;
+    display:flex;
+    justify-content:center;
+  }
+  .sheet{
+    width:100%;
+    max-width:640px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  header.masthead{
+    text-align:center;
+    border-bottom:3px double var(--rule);
+    padding-bottom:14px;
+  }
+  header.masthead .eyebrow{
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+  }
+  header.masthead h1{
+    font-family:"Special Elite","Courier New",monospace;
+    font-size:clamp(26px,7vw,38px);
+    margin:6px 0 4px;
+    letter-spacing:0.02em;
+  }
+  header.masthead .sub{
+    font-size:13px;
+    color:var(--ink-dim);
+  }
+
+  .stage{
+    background:var(--paper-2);
+    border:1px solid var(--rule);
+    border-radius:2px;
+    box-shadow:var(--card-shadow);
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    min-height:200px;
+  }
+
+  #tela-inicio{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+    padding-block:12px;
+    text-align:center;
+  }
+  #tela-inicio p{
+    color:var(--ink-dim);
+    font-size:13px;
+    max-width:46ch;
+    margin:0;
+  }
+  .filtros{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+  }
+  .chip{
+    font:inherit;
+    font-size:11px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:5px 10px;
+    background:transparent;
+    border:1px solid var(--rule);
+    color:var(--ink-dim);
+    border-radius:999px;
+    cursor:pointer;
+  }
+  .chip[aria-pressed="true"]{
+    background:var(--ink);
+    color:var(--paper);
+    border-color:var(--ink);
+  }
+
+  #contador{
+    font-size:12px;
+    color:var(--ink-dim);
+    min-height:1.2em;
+  }
+
+  .rolo{
+    font-family:"Special Elite","Courier New",monospace;
+    font-size:clamp(20px,5.6vw,28px);
+    min-height:1.6em;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding-inline:8px;
+  }
+
+  button.btn{
+    font-family:"Special Elite","Courier New",monospace;
+    font-size:16px;
+    letter-spacing:0.03em;
+    padding:14px 28px;
+    border:2px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:2px;
+    cursor:pointer;
+    text-transform:uppercase;
+  }
+  button.btn:active{ transform: translateY(1px); }
+  button.btn:focus-visible{ outline:3px solid var(--stamp); outline-offset:2px; }
+  button.btn.secundario{
+    background:transparent;
+    color:var(--ink);
+  }
+  button.btn.stamp{
+    border-color:var(--stamp);
+    background:var(--stamp);
+    color:var(--stamp-ink);
+  }
+  button.btn.ok{
+    border-color:var(--ok);
+    background:var(--ok);
+    color:var(--ok-ink);
+  }
+  button.btn:disabled{ opacity:0.5; cursor:default; }
+
+  #tela-ficha{ display:none; flex-direction:column; gap:16px; }
+  .ficha-topo{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:8px;
+    border-bottom:1px dashed var(--rule);
+    padding-bottom:10px;
+  }
+  .ficha-num{ font-size:11px; color:var(--ink-dim); letter-spacing:0.08em; }
+  .ficha-nome{
+    font-family:"Special Elite","Courier New",monospace;
+    font-size:clamp(20px,5.5vw,26px);
+    text-wrap:balance;
+  }
+  .tags{ display:flex; gap:6px; flex-wrap:wrap; }
+  .tag{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--ink-dim);
+    border:1px solid var(--rule);
+    padding:2px 7px;
+    border-radius:999px;
+  }
+  .bloco h2{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:var(--ink-dim);
+    margin:0 0 8px;
+    border-bottom:1px solid var(--rule);
+    padding-bottom:4px;
+  }
+  .lista-ingredientes{
+    margin:0; padding-left:0;
+    list-style:none;
+    display:flex; flex-direction:column; gap:6px;
+    font-size:14px;
+  }
+  .lista-ingredientes li::before{ content:"– "; color:var(--ink-dim); }
+  .lista-passos{
+    margin:0; padding-left:1.3em;
+    display:flex; flex-direction:column; gap:8px;
+    font-size:14px;
+  }
+  .lista-passos li{ padding-left:4px; }
+  .acompanhamento{
+    font-size:13px;
+    color:var(--ink-dim);
+    font-style:italic;
+  }
+  .fonte-link{
+    font-size:12px;
+    color:var(--ink-dim);
+  }
+  .fonte-link a{ color:var(--ink); }
+
+  .acoes{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; padding-top:6px; }
+
+  #tela-match{ display:none; flex-direction:column; gap:18px; }
+  .match-topo{ text-align:center; }
+  .match-topo .selo{
+    display:inline-block;
+    font-family:"Special Elite","Courier New",monospace;
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--ok);
+    border:1px solid var(--ok);
+    padding:3px 10px;
+    border-radius:999px;
+    transform:rotate(-2deg);
+    margin-bottom:6px;
+  }
+  .match-topo h2{
+    font-family:"Special Elite","Courier New",monospace;
+    font-size:clamp(20px,5.5vw,24px);
+    margin:4px 0 0;
+  }
+  .checklist{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+  .checklist li{
+    display:flex; align-items:flex-start; gap:10px;
+    padding:9px 4px;
+    border-bottom:1px dotted var(--rule);
+    font-size:14px;
+  }
+  .checklist li:last-child{ border-bottom:none; }
+  .checklist input[type="checkbox"]{
+    width:18px; height:18px; flex:none; margin-top:1px;
+    accent-color: var(--stamp);
+  }
+  .checklist label{ cursor:pointer; }
+  .checklist li.marcado label{
+    text-decoration:line-through;
+    color:var(--ink-dim);
+  }
+  .progresso{ font-size:12px; color:var(--ink-dim); }
+
+  footer.rodape{
+    text-align:center;
+    font-size:11px;
+    color:var(--ink-dim);
+    padding-top:6px;
+  }
+
+  @media (max-width:420px){
+    .ficha-topo{ flex-direction:column; align-items:flex-start; gap:4px; }
+  }
+
+  #tela-nova{ display:none; flex-direction:column; gap:14px; }
+  #tela-nova label{
+    display:flex; flex-direction:column; gap:4px;
+    font-size:12px; color:var(--ink-dim);
+    text-transform:uppercase; letter-spacing:0.06em;
+  }
+  #tela-nova input[type="text"], #tela-nova input[type="url"], #tela-nova textarea{
+    font-family:"IBM Plex Mono","Courier New",monospace;
+    font-size:14px;
+    color:var(--ink);
+    background:var(--paper);
+    border:1px solid var(--rule);
+    border-radius:2px;
+    padding:8px;
+    text-transform:none;
+    letter-spacing:normal;
+    width:100%;
+  }
+  #tela-nova textarea{ resize:vertical; min-height:5em; }
+  .tagpicker{ display:flex; flex-wrap:wrap; gap:8px; }
+  .tagpicker label{
+    flex-direction:row; align-items:center; gap:6px;
+    text-transform:none; letter-spacing:normal; font-size:13px;
+    border:1px solid var(--rule); border-radius:999px; padding:4px 10px;
+    cursor:pointer;
+  }
+  .tagpicker input{ accent-color:var(--stamp); }
+  .aviso{ font-size:13px; color:var(--stamp); min-height:1.2em; }
+  .link-discreto{
+    background:none; border:none; padding:0;
+    font-family:inherit; font-size:12px; color:var(--ink-dim);
+    text-decoration:underline; cursor:pointer;
+  }
+  .estado-ligacao{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-dim);
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;600&display=swap">
+
+<div class="sheet">
+  <header class="masthead">
+    <div class="eyebrow">Cozinha do Pedro &middot; edição de bolso</div>
+    <h1>ROLETA DO JANTAR</h1>
+    <div class="sub">carrega, sorteia, cozinha.</div>
+  </header>
+
+  <main class="stage">
+    <section id="tela-inicio">
+      <p>Não sabes o que comer? Escolhe um filtro (ou não escolhas nada) e deixa a sorte decidir.</p>
+      <div class="filtros" id="filtros"></div>
+      <div class="rolo" id="rolo">?</div>
+      <div id="contador">a ligar à base de dados&hellip;</div>
+      <button class="btn stamp" id="btn-sortear">🎲 Sortear</button>
+      <button class="btn secundario" id="btn-nova" type="button">+ Nova receita</button>
+    </section>
+
+    <section id="tela-nova">
+      <div class="bloco">
+        <h2>Nova receita</h2>
+      </div>
+      <label>Nome do prato
+        <input type="text" id="nova-nome" placeholder="Ex.: Bacalhau à Brás">
+      </label>
+      <label>Etiquetas
+        <span class="tagpicker" id="nova-tags-fixas"></span>
+      </label>
+      <label>Outra etiqueta (opcional, separadas por vírgula)
+        <input type="text" id="nova-tag-extra" placeholder="Ex.: rápido, forno">
+      </label>
+      <label>Ingredientes (um por linha)
+        <textarea id="nova-ingredientes" placeholder="400 g de bacalhau desfiado&#10;4 batatas&#10;..."></textarea>
+      </label>
+      <label>Modo de preparo (um passo por linha)
+        <textarea id="nova-passos" placeholder="Demolhe o bacalhau...&#10;Corte as batatas em palha..."></textarea>
+      </label>
+      <label>Sugestão de acompanhamento (opcional)
+        <input type="text" id="nova-acompanhamento" placeholder="Ex.: salada verde">
+      </label>
+      <label>Link da receita original (opcional)
+        <input type="url" id="nova-link" placeholder="https://...">
+      </label>
+      <div class="aviso" id="nova-erro"></div>
+      <div class="acoes">
+        <button class="btn secundario" id="btn-nova-cancelar" type="button">Cancelar</button>
+        <button class="btn ok" id="btn-nova-guardar" type="button">Guardar receita</button>
+      </div>
+    </section>
+
+    <section id="tela-ficha">
+      <div class="ficha-topo">
+        <div>
+          <div class="ficha-num" id="ficha-num"></div>
+          <div class="ficha-nome" id="ficha-nome"></div>
+          <div class="tags" id="ficha-tags"></div>
+        </div>
+      </div>
+
+      <div class="bloco">
+        <h2>Ingredientes</h2>
+        <ul class="lista-ingredientes" id="ficha-ingredientes"></ul>
+      </div>
+
+      <div class="bloco">
+        <h2>Modo de preparo</h2>
+        <ol class="lista-passos" id="ficha-passos"></ol>
+      </div>
+
+      <div id="ficha-acompanhamento"></div>
+      <div class="fonte-link" id="ficha-link"></div>
+
+      <div class="acoes">
+        <button class="btn secundario" id="btn-outro">🔁 Sortear outro</button>
+        <button class="btn ok" id="btn-match">✅ É este! Match</button>
+      </div>
+      <div style="text-align:center;">
+        <button class="link-discreto" id="btn-remover" type="button">Remover esta receita da lista</button>
+      </div>
+    </section>
+
+    <section id="tela-match">
+      <div class="match-topo">
+        <div class="selo">match confirmado</div>
+        <h2 id="match-nome"></h2>
+      </div>
+
+      <div class="bloco">
+        <h2>Lista de compras <span class="progresso" id="progresso-compras"></span></h2>
+        <ul class="checklist" id="lista-compras"></ul>
+      </div>
+
+      <div class="bloco">
+        <h2>Checklist de confeção <span class="progresso" id="progresso-cozinha"></span></h2>
+        <ul class="checklist" id="lista-cozinha"></ul>
+      </div>
+
+      <div class="acoes">
+        <button class="btn secundario" id="btn-voltar">↩ Voltar ao início</button>
+        <button class="btn secundario" id="btn-reset">🧹 Limpar marcações</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape" id="rodape-txt">a carregar pratos&hellip;</footer>
+  <div class="estado-ligacao" id="estado-ligacao"></div>
+</div>
+
+<script type="module">
+import { firebaseConfig } from "./config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, getDocs, setDoc, addDoc, deleteDoc,
+  onSnapshot, query, orderBy, writeBatch, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+const TAG_LABEL = {
+  peixe:"Peixe", marisco:"Marisco", carne:"Carne",
+  vegetariano:"Vegetariano", massa:"Massa", doce:"Doce"
+};
+const TAGS_FIXAS = ["peixe", "marisco", "carne", "vegetariano", "massa", "doce"];
+
+let RECEITAS = [];
+const state = { filtro: null, atual: null, matched: null, girando: false };
+
+function el(id){ return document.getElementById(id); }
+function storageKey(nome){ return "roleta_" + nome; }
+
+function lerProgresso(nome){
+  try{
+    const raw = localStorage.getItem(storageKey(nome));
+    return raw ? JSON.parse(raw) : { compras: [], cozinha: [] };
+  }catch(e){ return { compras: [], cozinha: [] }; }
+}
+function gravarProgresso(nome, data){
+  try{ localStorage.setItem(storageKey(nome), JSON.stringify(data)); }catch(e){}
+}
+
+function pratosFiltrados(){
+  if(!state.filtro) return RECEITAS;
+  return RECEITAS.filter(r => r.tags.includes(state.filtro));
+}
+
+function montarFiltros(){
+  const wrap = el("filtros");
+  wrap.innerHTML = "";
+  const todasTags = {};
+  RECEITAS.forEach(r => r.tags.forEach(t => { todasTags[t] = true; }));
+
+  const chipTodos = document.createElement("button");
+  chipTodos.className = "chip";
+  chipTodos.type = "button";
+  chipTodos.textContent = "Todos";
+  chipTodos.setAttribute("aria-pressed", state.filtro === null ? "true" : "false");
+  chipTodos.addEventListener("click", () => selecionarFiltro(null));
+  wrap.appendChild(chipTodos);
+
+  Object.keys(todasTags).sort().forEach(tag => {
+    const chip = document.createElement("button");
+    chip.className = "chip";
+    chip.type = "button";
+    chip.textContent = TAG_LABEL[tag] || tag;
+    chip.setAttribute("aria-pressed", state.filtro === tag ? "true" : "false");
+    chip.addEventListener("click", () => selecionarFiltro(tag));
+    wrap.appendChild(chip);
+  });
+}
+
+function selecionarFiltro(tag){
+  state.filtro = tag;
+  Array.from(document.querySelectorAll("#filtros .chip")).forEach((chip, i) => {
+    const isTodos = i === 0;
+    const pressed = isTodos ? tag === null : (TAG_LABEL[tag] === chip.textContent || (!TAG_LABEL[tag] && tag === chip.textContent));
+    chip.setAttribute("aria-pressed", pressed ? "true" : "false");
+  });
+  atualizarContador();
+}
+
+function atualizarContador(){
+  const n = pratosFiltrados().length;
+  el("contador").textContent = n + (n === 1 ? " prato disponível" : " pratos disponíveis");
+  el("rodape-txt").textContent = RECEITAS.length + (RECEITAS.length === 1 ? " prato em ficha" : " pratos em ficha") + " · toca em “+ Nova receita” para adicionares mais";
+}
+
+function sortear(){
+  if(state.girando) return;
+  const pool = pratosFiltrados();
+  if(pool.length === 0){
+    el("rolo").textContent = "sem pratos com este filtro";
+    return;
+  }
+  state.girando = true;
+  el("btn-sortear").disabled = true;
+  const rolo = el("rolo");
+  const voltas = 16;
+  let i = 0;
+  const intervalo = setInterval(() => {
+    const r = pool[Math.floor(Math.random() * pool.length)];
+    rolo.textContent = r.nome;
+    i++;
+    if(i >= voltas){
+      clearInterval(intervalo);
+      const escolhido = pool[Math.floor(Math.random() * pool.length)];
+      rolo.textContent = escolhido.nome;
+      state.atual = escolhido;
+      state.girando = false;
+      el("btn-sortear").disabled = false;
+      setTimeout(() => mostrarFicha(escolhido), 350);
+    }
+  }, 70);
+}
+
+function mostrarFicha(prato){
+  el("tela-inicio").style.display = "none";
+  el("tela-match").style.display = "none";
+  el("tela-nova").style.display = "none";
+  el("tela-ficha").style.display = "flex";
+
+  const idx = RECEITAS.indexOf(prato) + 1;
+  el("ficha-num").textContent = "Ficha nº " + String(idx).padStart(3, "0") + " / " + RECEITAS.length;
+  el("ficha-nome").textContent = prato.nome;
+
+  const tagsWrap = el("ficha-tags");
+  tagsWrap.innerHTML = "";
+  prato.tags.forEach(t => {
+    const span = document.createElement("span");
+    span.className = "tag";
+    span.textContent = TAG_LABEL[t] || t;
+    tagsWrap.appendChild(span);
+  });
+
+  const ingWrap = el("ficha-ingredientes");
+  ingWrap.innerHTML = "";
+  prato.ingredientes.forEach(ing => {
+    const li = document.createElement("li");
+    li.textContent = ing;
+    ingWrap.appendChild(li);
+  });
+
+  const passosWrap = el("ficha-passos");
+  passosWrap.innerHTML = "";
+  prato.passos.forEach(p => {
+    const li = document.createElement("li");
+    li.textContent = p;
+    passosWrap.appendChild(li);
+  });
+
+  const acompWrap = el("ficha-acompanhamento");
+  acompWrap.innerHTML = "";
+  if(prato.acompanhamento){
+    const p = document.createElement("p");
+    p.className = "acompanhamento";
+    p.textContent = "Sugestão de acompanhamento: " + prato.acompanhamento;
+    acompWrap.appendChild(p);
+  }
+
+  const linkWrap = el("ficha-link");
+  linkWrap.innerHTML = "";
+  if(prato.link){
+    const a = document.createElement("a");
+    a.href = prato.link;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = "Ver receita original (com foto) ↗";
+    linkWrap.appendChild(a);
+  } else {
+    linkWrap.textContent = "Sem link de receita original — ficha escrita à mão.";
+  }
+}
+
+function mostrarMatch(prato){
+  el("tela-ficha").style.display = "none";
+  el("tela-match").style.display = "flex";
+  el("match-nome").textContent = prato.nome;
+
+  const progresso = lerProgresso(prato.nome);
+
+  const compras = el("lista-compras");
+  compras.innerHTML = "";
+  prato.ingredientes.forEach((ing, i) => {
+    const li = criarItemChecklist("compra-" + i, ing, progresso.compras.includes(i), marcado => {
+      toggleProgresso(prato, "compras", i, marcado);
+    });
+    compras.appendChild(li);
+  });
+
+  const cozinha = el("lista-cozinha");
+  cozinha.innerHTML = "";
+  prato.passos.forEach((p, i) => {
+    const li = criarItemChecklist("passo-" + i, p, progresso.cozinha.includes(i), marcado => {
+      toggleProgresso(prato, "cozinha", i, marcado);
+    });
+    cozinha.appendChild(li);
+  });
+
+  atualizarProgressoVisual(prato);
+}
+
+function criarItemChecklist(id, texto, marcado, onChange){
+  const li = document.createElement("li");
+  if(marcado) li.className = "marcado";
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.id = id;
+  checkbox.checked = marcado;
+  const label = document.createElement("label");
+  label.setAttribute("for", id);
+  label.textContent = texto;
+  checkbox.addEventListener("change", () => {
+    li.className = checkbox.checked ? "marcado" : "";
+    onChange(checkbox.checked);
+  });
+  li.appendChild(checkbox);
+  li.appendChild(label);
+  return li;
+}
+
+function toggleProgresso(prato, tipo, indice, marcado){
+  const progresso = lerProgresso(prato.nome);
+  const arr = progresso[tipo];
+  const pos = arr.indexOf(indice);
+  if(marcado && pos === -1) arr.push(indice);
+  if(!marcado && pos !== -1) arr.splice(pos, 1);
+  gravarProgresso(prato.nome, progresso);
+  atualizarProgressoVisual(prato);
+}
+
+function atualizarProgressoVisual(prato){
+  const progresso = lerProgresso(prato.nome);
+  el("progresso-compras").textContent = "(" + progresso.compras.length + "/" + prato.ingredientes.length + ")";
+  el("progresso-cozinha").textContent = "(" + progresso.cozinha.length + "/" + prato.passos.length + ")";
+}
+
+function voltarInicio(){
+  el("tela-ficha").style.display = "none";
+  el("tela-match").style.display = "none";
+  el("tela-nova").style.display = "none";
+  el("tela-inicio").style.display = "flex";
+  el("rolo").textContent = "?";
+}
+
+el("btn-sortear").addEventListener("click", sortear);
+el("btn-outro").addEventListener("click", () => {
+  el("tela-ficha").style.display = "none";
+  el("tela-inicio").style.display = "flex";
+  sortear();
+});
+el("btn-match").addEventListener("click", () => {
+  state.matched = state.atual;
+  mostrarMatch(state.atual);
+});
+el("btn-voltar").addEventListener("click", voltarInicio);
+el("btn-reset").addEventListener("click", () => {
+  if(!state.matched) return;
+  try{ localStorage.removeItem(storageKey(state.matched.nome)); }catch(e){}
+  mostrarMatch(state.matched);
+});
+
+// --- formulário: nova receita ---
+function montarTagsFixas(){
+  const wrap = el("nova-tags-fixas");
+  wrap.innerHTML = "";
+  TAGS_FIXAS.forEach(tag => {
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = tag;
+    label.appendChild(input);
+    label.appendChild(document.createTextNode(TAG_LABEL[tag] || tag));
+    wrap.appendChild(label);
+  });
+}
+
+function limparFormNova(){
+  el("nova-nome").value = "";
+  el("nova-tag-extra").value = "";
+  el("nova-ingredientes").value = "";
+  el("nova-passos").value = "";
+  el("nova-acompanhamento").value = "";
+  el("nova-link").value = "";
+  el("nova-erro").textContent = "";
+  Array.from(el("nova-tags-fixas").querySelectorAll("input")).forEach(cb => { cb.checked = false; });
+}
+
+function linhas(texto){
+  return texto.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+}
+
+async function guardarNovaReceita(){
+  const erroEl = el("nova-erro");
+  erroEl.textContent = "";
+
+  const nome = el("nova-nome").value.trim();
+  const ingredientes = linhas(el("nova-ingredientes").value);
+  const passos = linhas(el("nova-passos").value);
+
+  if(!nome){ erroEl.textContent = "Escreve o nome do prato."; return; }
+  if(ingredientes.length === 0){ erroEl.textContent = "Escreve pelo menos um ingrediente (um por linha)."; return; }
+  if(passos.length === 0){ erroEl.textContent = "Escreve pelo menos um passo do modo de preparo."; return; }
+
+  const tags = [];
+  Array.from(el("nova-tags-fixas").querySelectorAll("input:checked")).forEach(cb => tags.push(cb.value));
+  el("nova-tag-extra").value.split(",").forEach(t => {
+    const limpo = t.trim().toLowerCase();
+    if(limpo && !tags.includes(limpo)) tags.push(limpo);
+  });
+
+  const dados = {
+    nome,
+    link: el("nova-link").value.trim(),
+    tags,
+    ingredientes,
+    passos,
+    acompanhamento: el("nova-acompanhamento").value.trim(),
+    criadoEm: serverTimestamp()
+  };
+
+  const botao = el("btn-nova-guardar");
+  botao.disabled = true;
+  botao.textContent = "A guardar…";
+
+  try{
+    await addDoc(collection(db, "receitas"), dados);
+    botao.disabled = false;
+    botao.textContent = "Guardar receita";
+    limparFormNova();
+    voltarInicio();
+  }catch(erro){
+    botao.disabled = false;
+    botao.textContent = "Guardar receita";
+    console.error(erro);
+    erroEl.textContent = "Não foi possível guardar (" + (erro.code || "erro desconhecido") + "). Tenta novamente.";
+  }
+}
+
+el("btn-nova").addEventListener("click", () => {
+  el("tela-inicio").style.display = "none";
+  el("tela-nova").style.display = "flex";
+  el("nova-nome").focus();
+});
+el("btn-nova-cancelar").addEventListener("click", () => {
+  limparFormNova();
+  voltarInicio();
+});
+el("btn-nova-guardar").addEventListener("click", guardarNovaReceita);
+
+el("btn-remover").addEventListener("click", async () => {
+  if(!state.atual || !state.atual.id) return;
+  const ok = window.confirm("Remover \"" + state.atual.nome + "\" da lista? Esta ação não pode ser desfeita.");
+  if(!ok) return;
+  try{
+    await deleteDoc(doc(db, "receitas", state.atual.id));
+    voltarInicio();
+  }catch(erro){
+    console.error(erro);
+    window.alert("Não foi possível remover a receita. Tenta novamente.");
+  }
+});
+
+// --- ligação ao Firestore ---
+function ligarReceitas(){
+  const q = query(collection(db, "receitas"), orderBy("nome", "asc"));
+  onSnapshot(q, snap => {
+    RECEITAS = snap.docs
+      .filter(d => d.id !== "_seed_marker")
+      .map(d => {
+        const data = d.data() || {};
+        return {
+          id: d.id,
+          nome: typeof data.nome === "string" && data.nome ? data.nome : "(sem nome)",
+          link: typeof data.link === "string" ? data.link : "",
+          tags: Array.isArray(data.tags) ? data.tags : [],
+          ingredientes: Array.isArray(data.ingredientes) ? data.ingredientes : [],
+          passos: Array.isArray(data.passos) ? data.passos : [],
+          acompanhamento: typeof data.acompanhamento === "string" ? data.acompanhamento : ""
+        };
+      });
+    montarFiltros();
+    atualizarContador();
+    el("estado-ligacao").textContent = "";
+  }, erro => {
+    console.error(erro);
+    el("contador").textContent = "erro a ligar à base de dados";
+    el("estado-ligacao").textContent = "Verifica a configuração em config.js e as regras do Firestore.";
+  });
+}
+
+async function semearSeVazio(){
+  const marker = doc(db, "receitas", "_seed_marker");
+  const markerSnap = await getDocs(query(collection(db, "receitas"), orderBy("nome", "asc")));
+  if(!markerSnap.empty) return;
+
+  try{
+    const resp = await fetch("./receitas-seed.json");
+    const seed = await resp.json();
+    const batch = writeBatch(db);
+    seed.forEach(receita => {
+      const ref = doc(collection(db, "receitas"));
+      batch.set(ref, receita);
+    });
+    await batch.commit();
+  }catch(erro){
+    console.error("Falha ao semear receitas iniciais:", erro);
+  }
+}
+
+montarTagsFixas();
+
+onAuthStateChanged(auth, async user => {
+  if(user){
+    await semearSeVazio();
+    ligarReceitas();
+  }
+});
+
+signInAnonymously(auth).catch(erro => {
+  console.error(erro);
+  el("contador").textContent = "erro de autenticação";
+  el("estado-ligacao").textContent = "Ativa “Anonymous” em Authentication -> Sign-in method, na consola do Firebase.";
+});
+</script>
+
+</body></html>
